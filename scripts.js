@@ -29,23 +29,10 @@ async function getWeather() {
     return;
   }
 
-  const url = `/api/weather?city=${encodeURIComponent(city)}`;
-
   showLoader(true);
   try {
-    const res = await fetch(url);
+    const data = await fetchWeatherData(city);
     showLoader(false);
-
-    if (!res.ok) {
-      if (res.status === 404) {
-        showError("City not found. Please check the city name.");
-        return;
-      }
-      const text = await res.text().catch(() => "");
-      throw new Error(`Server error: ${res.status} ${text}`);
-    }
-
-    const data = await res.json();
 
     const cityCurrent = document.getElementById("city-name");
     if (cityCurrent)
