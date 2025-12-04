@@ -5,7 +5,7 @@ async function fetchWeatherData(city) {
 
   const apiKey = "2bc70d527ee1fbcc925e2b568725e615"; // Replace with your actual OpenWeatherMap API key
 
-  if (apiKey === "2bc70d527ee1fbcc925e2b568725e615") {
+  if (!apiKey || apiKey === "2bc70d527ee1fbcc925e2b568725e615") {
     throw new Error(
       "API key not configured. Please add your OpenWeatherMap API key to weather.js"
     );
