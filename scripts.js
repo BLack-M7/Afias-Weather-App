@@ -31,7 +31,15 @@ async function getWeather() {
 
   showLoader(true);
   try {
-    const data = await fetchWeatherData(city);
+    const fetchFn =
+      typeof fetchWeatherData === "function"
+        ? fetchWeatherData
+        : window.fetchWeatherData;
+    if (typeof fetchFn !== "function")
+      throw new Error(
+        "Weather client not available (fetchWeatherData not found)"
+      );
+    const data = await fetchFn(city);
     showLoader(false);
 
     const cityCurrent = document.getElementById("city-name");
@@ -64,9 +72,13 @@ async function getWeather() {
       }
     }
   } catch (err) {
-    console.error(err);
+    console.error("getWeather error:", err);
     showLoader(false);
-    showError("Unable to fetch weather data. Please try again later.");
+    const userMsg =
+      err && err.message
+        ? err.message
+        : "Unable to fetch weather data. Please try again later.";
+    showError(userMsg);
   }
 }
 

@@ -24,3 +24,12 @@ async function fetchWeatherData(city) {
     throw err;
   }
 }
+
+// Ensure the function is available on the window object when loaded in the browser
+try {
+  if (typeof window !== "undefined") {
+    window.fetchWeatherData = fetchWeatherData;
+  }
+} catch (e) {
+  // ignore (non-browser environments)
+}
