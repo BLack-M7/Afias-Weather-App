@@ -14,12 +14,13 @@ async function fetchWeatherData(city) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error("API Response not OK:", response.status, data);
       throw new Error(data.message || `Error: ${response.status}`);
     }
 
     return data;
   } catch (err) {
-    console.error("Weather API error:", err);
+    console.error("Weather API error details:", err.message, err);
     throw err;
   }
 }
