@@ -31,7 +31,7 @@
       <section>
         <div class="search-container">
           <input type="text" id="city" placeholder="Enter city name..." />
-          <button  onclick="getWeather()" id="searchBtn">Search</button>
+          <button onclick="getWeather()" id="searchBtn">Search</button>
         </div>
       </section>
       <section>
@@ -42,6 +42,17 @@
           <h2 id="city-name">City</h2>
           <p id="temperature">Temperature: --°C</p>
           <p id="description">Description: --</p>
+        </div>
+      </section>
+      <section>
+        <div class="status-container">
+          <div id="loader" class="loader hidden" aria-hidden="true"></div>
+          <div
+            id="error-message"
+            class="error-message"
+            role="alert"
+            aria-hidden="true"
+          ></div>
         </div>
       </section>
       <section>
@@ -89,6 +100,6 @@
         <div id="date">Tuesday, 17 August, 2025</div>
       </div>
     </section>
-    <script src="scripts.js" defer></scripts>
+    <script src="scripts.js" defer></script>
   </body>
 </html>

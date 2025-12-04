@@ -1,28 +1,86 @@
+// Loader / Error helpers and weather fetch via serverless proxy
+function showLoader(visible) {
+  const loader = document.getElementById("loader");
+  const err = document.getElementById("error-message");
+  if (loader) {
+    if (visible) {
+      loader.classList.remove("hidden");
+    } else {
+      loader.classList.add("hidden");
+    }
+  }
+  if (err && visible) err.classList.add("hidden");
+}
+
+function showError(message) {
+  const err = document.getElementById("error-message");
+  if (err) {
+    err.textContent = message;
+    err.classList.remove("hidden");
+  } else {
+    alert(message);
+  }
+}
+
 async function getWeather() {
-  const city = document.getElementById("city").value;
+  const city = document.getElementById("city").value.trim();
+  if (!city) {
+    showError("Please enter a city name.");
+    return;
+  }
 
-  //getting an apiKey
-  const apiKey = "da5cc509bc967933cf9f957a7a06eb9b";
-  const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
-  const forecastWeatherUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
+  const url = `/api/weather?city=${encodeURIComponent(city)}`;
 
-  //get weather and turn it to javaScript object
-  const currentResponse = await fetch(currentWeatherUrl);
-  const currentData = await currentResponse.json();
+  showLoader(true);
+  try {
+    const res = await fetch(url);
+    showLoader(false);
 
-  //inserting the values into our html
-  const cityCurrent = document.getElementById("city-name");
-  cityCurrent.textContent = `${currentData.name}, ${currentData.sys.country}`;
-  const currentTemperature = document.getElementById("temperature");
-  currentTemperature.textContent = `Temperature: ${currentData.main.temp}°C`;
-  const currentDescription = document.getElementById("description");
-  currentDescription.textContent = `Description: ${currentData.weather[0].description}`;
+    if (!res.ok) {
+      if (res.status === 404) {
+        showError("City not found. Please check the city name.");
+        return;
+      }
+      const text = await res.text().catch(() => "");
+      throw new Error(`Server error: ${res.status} ${text}`);
+    }
 
-  //getting weather icon
-  const currentIcon = currentData.weather[0].icon;
-  const picture = document.querySelector(".weather-container #icon");
-  picture.style.background = "none";
-  picture.innerHTML = `<img src="https://openweathermap.org/img/wn/${currentIcon}@2x.png" alt="weather icon">`;
+    const data = await res.json();
+
+    const cityCurrent = document.getElementById("city-name");
+    if (cityCurrent)
+      cityCurrent.textContent = `${data.name || city}${
+        data.sys && data.sys.country ? ", " + data.sys.country : ""
+      }`;
+
+    const currentTemperature = document.getElementById("temperature");
+    if (currentTemperature)
+      currentTemperature.textContent = data.main
+        ? `Temperature: ${data.main.temp}°C`
+        : "Temperature: --°C";
+
+    const currentDescription = document.getElementById("description");
+    if (currentDescription)
+      currentDescription.textContent =
+        data.weather && data.weather[0]
+          ? `Description: ${data.weather[0].description}`
+          : "Description: --";
+
+    const picture = document.querySelector(".weather-container #icon");
+    if (picture) {
+      picture.style.background = "none";
+      if (data.weather && data.weather[0] && data.weather[0].icon) {
+        const currentIcon = data.weather[0].icon;
+        picture.innerHTML = `<img src="https://openweathermap.org/img/wn/${currentIcon}@2x.png" alt="weather icon">`;
+      } else {
+        picture.innerHTML = "";
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    showLoader(false);
+    showError("Unable to fetch weather data. Please try again later.");
+  }
 }
 
 function updateClock() {
