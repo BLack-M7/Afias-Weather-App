@@ -12,6 +12,29 @@ function showLoader(visible) {
   if (err && visible) err.classList.add("hidden");
 }
 
+// Inline browser-compatible weather API client (moved from api/weather.js)
+async function fetchWeatherData(city) {
+  const apiKey = "2bc70d527ee1fbcc925e2b568725e615"; // your OpenWeatherMap API key
+  const endpoint = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+    city
+  )}&appid=${apiKey}&units=metric`;
+
+  try {
+    const response = await fetch(endpoint);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("API Response not OK:", response.status, data);
+      throw new Error(data.message || `Error: ${response.status}`);
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Weather API error details:", err.message || err, err);
+    throw err;
+  }
+}
+
 function showError(message) {
   const err = document.getElementById("error-message");
   if (err) {
