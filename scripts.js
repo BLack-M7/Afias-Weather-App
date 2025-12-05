@@ -28,6 +28,25 @@ async function fetchWeatherData(city) {
       throw new Error(data.message || `Error: ${response.status}`);
     }
 
+    // Fetch forecast (daily) using One Call API with the coordinates
+    try {
+      const lat = data.coord && data.coord.lat;
+      const lon = data.coord && data.coord.lon;
+      if (lat != null && lon != null) {
+        const oneCallUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts,current&units=metric&appid=${apiKey}`;
+        const fRes = await fetch(oneCallUrl);
+        const fData = await fRes.json();
+        if (fRes.ok && fData && Array.isArray(fData.daily)) {
+          // attach the next 4 days (skip today's remaining) to the result
+          data.forecast = fData.daily.slice(1, 5);
+        } else {
+          console.warn('Forecast not available', fRes.status, fData);
+        }
+      }
+    } catch (ferr) {
+      console.warn('Failed to fetch forecast:', ferr);
+    }
+
     return data;
   } catch (err) {
     console.error("Weather API error details:", err.message || err, err);
@@ -93,6 +112,39 @@ async function getWeather() {
       } else {
         picture.innerHTML = "";
       }
+    }
+
+    // Render 4-day forecast if available
+    if (data.forecast && Array.isArray(data.forecast)) {
+      const days = document.querySelectorAll('.forecast .day');
+      data.forecast.forEach((f, idx) => {
+        const el = days[idx];
+        if (!el) return;
+
+        // weekday
+        const weekday = el.querySelector('.weekday');
+        if (weekday) {
+          const date = new Date(f.dt * 1000);
+          weekday.textContent = date.toLocaleDateString(undefined, { weekday: 'short' });
+        }
+
+        // icon
+        const picDiv = el.querySelector('figure .icon div');
+        if (picDiv) {
+          if (f.weather && f.weather[0] && f.weather[0].icon) {
+            const ic = f.weather[0].icon;
+            picDiv.innerHTML = `<img src="https://openweathermap.org/img/wn/${ic}@2x.png" alt="icon">`;
+          } else {
+            picDiv.innerHTML = '';
+          }
+        }
+
+        // temperature
+        const tempEl = el.querySelector('.temp');
+        if (tempEl && f.temp && (f.temp.day || f.temp.day === 0)) {
+          tempEl.textContent = `${Math.round(f.temp.day)}°C`;
+        }
+      });
     }
   } catch (err) {
     console.error("getWeather error:", err);
