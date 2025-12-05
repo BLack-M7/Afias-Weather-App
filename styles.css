@@ -236,6 +236,29 @@ body {
   color: #6b0b0b;
 }
 
+.alert-icon {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 18px;
+}
+.alert-message {
+  display: inline-block;
+  vertical-align: middle;
+}
+.alert-dismiss {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 8px;
+  margin-left: 12px;
+  cursor: pointer;
+  color: inherit;
+}
+.alert-dismiss:focus {
+  outline: 2px solid rgba(0, 0, 0, 0.2);
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

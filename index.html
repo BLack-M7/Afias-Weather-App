@@ -37,7 +37,17 @@
           class="alert-banner hidden"
           role="status"
           aria-live="polite"
-        ></div>
+        >
+          <span id="alert-icon" class="alert-icon" aria-hidden="true">⚠️</span>
+          <span id="alert-message" class="alert-message"></span>
+          <button
+            id="alert-dismiss"
+            class="alert-dismiss"
+            aria-label="Dismiss alert"
+          >
+            ×
+          </button>
+        </div>
         <div class="weather-container">
           <div id="icon">
             <!--Current Weather Icon-->

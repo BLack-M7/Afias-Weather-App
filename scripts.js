@@ -143,19 +143,56 @@ function showError(message) {
 // Alert banner helpers
 function showAlert(message, important = false) {
   const banner = document.getElementById("alert-banner");
-  if (!banner) return;
-  banner.textContent = message;
+  const msgEl = document.getElementById("alert-message");
+  const dismissBtn = document.getElementById("alert-dismiss");
+  const iconEl = document.getElementById("alert-icon");
+  if (!banner || !msgEl) return;
+  const text = Array.isArray(message) ? message.join(" • ") : message;
+  msgEl.textContent = text;
   banner.classList.remove("hidden");
   if (important) banner.classList.add("important");
   else banner.classList.remove("important");
+  if (dismissBtn) {
+    dismissBtn.onclick = () => clearAlert();
+    dismissBtn.classList.remove("hidden");
+  }
+  if (iconEl) iconEl.classList.toggle("important", important);
+  // send a browser notification if possible
+  notifyUser("Weather alert", text, important).catch(() => {});
 }
 
 function clearAlert() {
   const banner = document.getElementById("alert-banner");
   if (!banner) return;
-  banner.textContent = "";
+  const msgEl = document.getElementById("alert-message");
+  const dismissBtn = document.getElementById("alert-dismiss");
+  const iconEl = document.getElementById("alert-icon");
+  if (msgEl) msgEl.textContent = "";
+  if (dismissBtn) dismissBtn.classList.add("hidden");
+  if (iconEl) iconEl.classList.remove("important");
   banner.classList.add("hidden");
   banner.classList.remove("important");
+}
+
+// Browser notification helper
+async function notifyUser(title, body, important = false) {
+  if (!("Notification" in window)) return;
+  try {
+    if (Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") return;
+    }
+    if (Notification.permission === "granted") {
+      const opts = { body };
+      try {
+        const iconEl = document.querySelector(".weather-container #icon img");
+        if (iconEl && iconEl.src) opts.icon = iconEl.src;
+      } catch (e) {}
+      new Notification(title, opts);
+    }
+  } catch (e) {
+    console.warn("Notification failed", e);
+  }
 }
 
 // Determine if weather condition is hazardous/precipitation/low visibility
@@ -303,6 +340,24 @@ async function getWeather() {
           tempEl.textContent = `${Math.round(f.temp.day)}°C`;
         }
       });
+    }
+
+    // After rendering, check for hazards and show alerts if any
+    try {
+      const reasons = checkForHazard(data);
+      if (reasons && reasons.length) {
+        // determine importance: snow, squall, thunder, fog/haze or very high pop
+        const important = reasons.some(
+          (r) =>
+            /snow|squall|thunder|hail|fog|haze|severe/i.test(r) ||
+            (/\d+% chance of precipitation/.test(r) && parseInt(r) > 70)
+        );
+        showAlert(reasons, important);
+      } else {
+        clearAlert();
+      }
+    } catch (e) {
+      console.warn("Hazard check failed", e);
     }
   } catch (err) {
     console.error("getWeather error:", err);
