@@ -40,11 +40,11 @@ async function fetchWeatherData(city) {
           // attach the next 4 days (skip today's remaining) to the result
           data.forecast = fData.daily.slice(1, 5);
         } else {
-          console.warn('Forecast not available', fRes.status, fData);
+          console.warn("Forecast not available", fRes.status, fData);
         }
       }
     } catch (ferr) {
-      console.warn('Failed to fetch forecast:', ferr);
+      console.warn("Failed to fetch forecast:", ferr);
     }
 
     return data;
@@ -116,31 +116,33 @@ async function getWeather() {
 
     // Render 4-day forecast if available
     if (data.forecast && Array.isArray(data.forecast)) {
-      const days = document.querySelectorAll('.forecast .day');
+      const days = document.querySelectorAll(".forecast .day");
       data.forecast.forEach((f, idx) => {
         const el = days[idx];
         if (!el) return;
 
         // weekday
-        const weekday = el.querySelector('.weekday');
+        const weekday = el.querySelector(".weekday");
         if (weekday) {
           const date = new Date(f.dt * 1000);
-          weekday.textContent = date.toLocaleDateString(undefined, { weekday: 'short' });
+          weekday.textContent = date.toLocaleDateString(undefined, {
+            weekday: "short",
+          });
         }
 
         // icon
-        const picDiv = el.querySelector('figure .icon div');
+          const picDiv = el.querySelector(".icon div") || el.querySelector("figure.icon div");
         if (picDiv) {
           if (f.weather && f.weather[0] && f.weather[0].icon) {
             const ic = f.weather[0].icon;
             picDiv.innerHTML = `<img src="https://openweathermap.org/img/wn/${ic}@2x.png" alt="icon">`;
           } else {
-            picDiv.innerHTML = '';
+            picDiv.innerHTML = "";
           }
         }
 
         // temperature
-        const tempEl = el.querySelector('.temp');
+        const tempEl = el.querySelector(".temp");
         if (tempEl && f.temp && (f.temp.day || f.temp.day === 0)) {
           tempEl.textContent = `${Math.round(f.temp.day)}°C`;
         }
