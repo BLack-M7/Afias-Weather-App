@@ -140,6 +140,85 @@ function showError(message) {
   }
 }
 
+// Alert banner helpers
+function showAlert(message, important = false) {
+  const banner = document.getElementById("alert-banner");
+  if (!banner) return;
+  banner.textContent = message;
+  banner.classList.remove("hidden");
+  if (important) banner.classList.add("important");
+  else banner.classList.remove("important");
+}
+
+function clearAlert() {
+  const banner = document.getElementById("alert-banner");
+  if (!banner) return;
+  banner.textContent = "";
+  banner.classList.add("hidden");
+  banner.classList.remove("important");
+}
+
+// Determine if weather condition is hazardous/precipitation/low visibility
+function checkForHazard(data) {
+  // data: object returned from fetchWeatherData
+  // Check current conditions
+  const hazardReasons = [];
+  function inspectWeatherItem(item, label) {
+    if (!item || !item.weather || !item.weather[0]) return;
+    const w = item.weather[0];
+    const main = (w.main || "").toLowerCase();
+    const desc = (w.description || "").toLowerCase();
+    const id = w.id || 0;
+
+    // Precipitation: rain, drizzle, snow
+    if (
+      main.includes("rain") ||
+      main.includes("drizzle") ||
+      main.includes("snow") ||
+      desc.includes("rain") ||
+      desc.includes("drizzle") ||
+      desc.includes("snow") ||
+      (id >= 200 && id < 623)
+    ) {
+      hazardReasons.push(`${label} expected: ${w.description}`);
+    }
+
+    // Low visibility: fog, mist, haze, smoke, dust, sand, squall
+    if (
+      desc.includes("fog") ||
+      desc.includes("mist") ||
+      desc.includes("haze") ||
+      desc.includes("smoke") ||
+      desc.includes("dust") ||
+      desc.includes("sand") ||
+      desc.includes("squall")
+    ) {
+      hazardReasons.push(`${label}: ${w.description}`);
+    }
+  }
+
+  // Check current
+  inspectWeatherItem({ weather: data.weather }, "Now");
+
+  // Check forecast array (next days)
+  if (Array.isArray(data.forecast)) {
+    data.forecast.forEach((f, idx) => {
+      inspectWeatherItem({ weather: f.weather }, `Day ${idx + 1}`);
+      // If One Call daily has 'pop' (probability of precipitation), treat >40% as warning
+      if (f.pop != null && f.pop >= 0.4) {
+        const date = new Date(f.dt * 1000).toLocaleDateString(undefined, {
+          weekday: "short",
+        });
+        hazardReasons.push(
+          `${date}: ${Math.round((f.pop || 0) * 100)}% chance of precipitation`
+        );
+      }
+    });
+  }
+
+  return hazardReasons;
+}
+
 async function getWeather() {
   const city = document.getElementById("city").value.trim();
   if (!city) {
