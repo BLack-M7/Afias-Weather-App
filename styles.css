@@ -259,6 +259,57 @@ body {
   outline: 2px solid rgba(0, 0, 0, 0.2);
 }
 
+.alert-opt {
+  display: inline-block;
+  margin-left: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.alert-opt input {
+  margin-right: 6px;
+}
+
+/* Modal for day details */
+.modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 2000;
+}
+.modal.open {
+  display: flex;
+}
+.modal-content {
+  background: #222;
+  color: #fff;
+  padding: 18px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 520px;
+  text-align: left;
+}
+.modal-close {
+  float: right;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+.modal .row {
+  margin: 8px 0;
+}
+.modal .label {
+  font-weight: 700;
+  margin-right: 8px;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

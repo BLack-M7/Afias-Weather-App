@@ -40,6 +40,10 @@
         >
           <span id="alert-icon" class="alert-icon" aria-hidden="true">⚠️</span>
           <span id="alert-message" class="alert-message"></span>
+          <label class="alert-opt"
+            ><input type="checkbox" id="dont-notify" /> Don't notify again for
+            this city</label
+          >
           <button
             id="alert-dismiss"
             class="alert-dismiss"
@@ -115,5 +119,30 @@
     </section>
     <script src="scripts.js" defer></script>
     <!-- api/weather.js inlined into scripts.js to avoid load issues -->
+    <div class="modal" id="day-modal" role="dialog" aria-hidden="true">
+      <div class="modal-content" role="document">
+        <button class="modal-close" id="modal-close" aria-label="Close">
+          ×
+        </button>
+        <h3 id="modal-title">Day details</h3>
+        <div class="row">
+          <span class="label">Temp:</span> <span id="modal-temp">--°C</span>
+        </div>
+        <div class="row">
+          <span class="label">Description:</span>
+          <span id="modal-desc">--</span>
+        </div>
+        <div class="row">
+          <span class="label">Chance:</span> <span id="modal-pop">--</span>
+        </div>
+        <div class="row">
+          <span class="label">Wind:</span> <span id="modal-wind">--</span>
+        </div>
+        <div class="row">
+          <span class="label">Humidity:</span>
+          <span id="modal-humidity">--</span>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

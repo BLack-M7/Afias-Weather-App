@@ -14,28 +14,59 @@ function showLoader(visible) {
 
 // Inline browser-compatible weather API client (moved from api/weather.js)
 async function fetchWeatherData(city) {
-  const apiKey = "2bc70d527ee1fbcc925e2b568725e615"; // your OpenWeatherMap API key
-  const endpoint = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-    city
-  )}&appid=${apiKey}&units=metric`;
+  // Prefer local proxy if available
+  const proxyUrl = `/api/weather?city=${encodeURIComponent(city)}`;
+  const directApiKey = "2bc70d527ee1fbcc925e2b568725e615"; // fallback key
+
+  async function fetchDirect() {
+    const endpoint = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+      city
+    )}&appid=${directApiKey}&units=metric`;
+    const r = await fetch(endpoint);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.message || `Error: ${r.status}`);
+    return d;
+  }
 
   try {
-    const response = await fetch(endpoint);
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("API Response not OK:", response.status, data);
-      throw new Error(data.message || `Error: ${response.status}`);
+    // Try proxy first
+    try {
+      const p = await fetch("/api/ping");
+      if (p.ok) {
+        const res = await fetch(proxyUrl);
+        const data = await res.json();
+        if (res.ok) return data;
+        console.warn(
+          "Proxy responded with non-OK, falling back to direct",
+          res.status,
+          data
+        );
+      }
+    } catch (e) {
+      // proxy not available, fall back
     }
+
+    const data = await fetchDirect();
 
     // Fetch forecast (daily) using One Call API with the coordinates
     try {
       const lat = data.coord && data.coord.lat;
       const lon = data.coord && data.coord.lon;
       if (lat != null && lon != null) {
-        const oneCallUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts,current&units=metric&appid=${apiKey}`;
-        const fRes = await fetch(oneCallUrl);
-        const fData = await fRes.json();
+        // Try proxy forecast endpoint first
+        let fRes, fData;
+        try {
+          const proxyForecast = await fetch(
+            `/api/forecast?city=${encodeURIComponent(city)}`
+          );
+          fData = await proxyForecast.json();
+          fRes = proxyForecast;
+        } catch (pe) {
+          // fall back to One Call direct
+          const oneCallUrl = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts,current&units=metric&appid=${directApiKey}`;
+          fRes = await fetch(oneCallUrl);
+          fData = await fRes.json();
+        }
         if (fRes.ok && fData && Array.isArray(fData.daily)) {
           // attach the next 4 days (skip today's remaining) to the result
           data.forecast = fData.daily.slice(1, 5);
@@ -141,11 +172,12 @@ function showError(message) {
 }
 
 // Alert banner helpers
-function showAlert(message, important = false) {
+function showAlert(message, important = false, cityName = "") {
   const banner = document.getElementById("alert-banner");
   const msgEl = document.getElementById("alert-message");
   const dismissBtn = document.getElementById("alert-dismiss");
   const iconEl = document.getElementById("alert-icon");
+  const dontBox = document.getElementById("dont-notify");
   if (!banner || !msgEl) return;
   const text = Array.isArray(message) ? message.join(" • ") : message;
   msgEl.textContent = text;
@@ -157,6 +189,22 @@ function showAlert(message, important = false) {
     dismissBtn.classList.remove("hidden");
   }
   if (iconEl) iconEl.classList.toggle("important", important);
+
+  // Manage per-city 'don't notify' checkbox state
+  const key = "dontNotify:" + (cityName || "").toLowerCase();
+  try {
+    const pref = localStorage.getItem(key);
+    if (dontBox) {
+      dontBox.checked = !!pref;
+      dontBox.onchange = function () {
+        if (dontBox.checked) localStorage.setItem(key, "1");
+        else localStorage.removeItem(key);
+      };
+    }
+  } catch (e) {
+    // ignore storage errors
+  }
+
   // send a browser notification if possible
   notifyUser("Weather alert", text, important).catch(() => {});
 }
@@ -339,6 +387,43 @@ async function getWeather() {
         if (tempEl && f.temp && (f.temp.day || f.temp.day === 0)) {
           tempEl.textContent = `${Math.round(f.temp.day)}°C`;
         }
+
+        // attach click handler to open modal with details
+        el.onclick = () => {
+          try {
+            const modal = document.getElementById("day-modal");
+            const title = document.getElementById("modal-title");
+            const mTemp = document.getElementById("modal-temp");
+            const mDesc = document.getElementById("modal-desc");
+            const mPop = document.getElementById("modal-pop");
+            const mWind = document.getElementById("modal-wind");
+            const mHum = document.getElementById("modal-humidity");
+            if (title)
+              title.textContent = new Date(f.dt * 1000).toLocaleDateString(
+                undefined,
+                { weekday: "long", month: "short", day: "numeric" }
+              );
+            if (mTemp)
+              mTemp.textContent =
+                f.temp && f.temp.day ? `${Math.round(f.temp.day)}°C` : "--";
+            if (mDesc)
+              mDesc.textContent =
+                f.weather && f.weather[0] && f.weather[0].description
+                  ? f.weather[0].description
+                  : "--";
+            if (mPop)
+              mPop.textContent =
+                f.pop != null ? `${Math.round((f.pop || 0) * 100)}%` : "--";
+            if (mWind)
+              mWind.textContent =
+                f.wind_speed != null ? `${f.wind_speed} m/s` : "--";
+            if (mHum)
+              mHum.textContent = f.humidity != null ? `${f.humidity}%` : "--";
+            if (modal) modal.classList.add("open");
+          } catch (e) {
+            console.warn("Open modal failed", e);
+          }
+        };
       });
     }
 
@@ -352,7 +437,10 @@ async function getWeather() {
             /snow|squall|thunder|hail|fog|haze|severe/i.test(r) ||
             (/\d+% chance of precipitation/.test(r) && parseInt(r) > 70)
         );
-        showAlert(reasons, important);
+        // Respect 'don't notify' preference per city
+        const cityKey = (data.name || city).toLowerCase();
+        const dont = localStorage.getItem("dontNotify:" + cityKey);
+        if (!dont) showAlert(reasons, important, data.name || city);
       } else {
         clearAlert();
       }
@@ -416,3 +504,17 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+// Modal close handler
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("day-modal");
+  const closeBtn = document.getElementById("modal-close");
+  if (closeBtn)
+    closeBtn.onclick = () => {
+      if (modal) modal.classList.remove("open");
+    };
+  if (modal)
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.classList.remove("open");
+    };
+});
