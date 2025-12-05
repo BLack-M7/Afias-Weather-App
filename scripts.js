@@ -40,7 +40,7 @@ async function fetchWeatherData(city) {
           // attach the next 4 days (skip today's remaining) to the result
           data.forecast = fData.daily.slice(1, 5);
         } else {
-          console.warn('Forecast not available', fRes.status, fData);
+          console.warn("Forecast not available", fRes.status, fData);
 
           // Fallback: some API keys cannot access One Call. Use the free 5-day /forecast endpoint as a fallback.
           try {
@@ -54,7 +54,12 @@ async function fetchWeatherData(city) {
               const groups = {};
               altData.list.forEach((item) => {
                 const d = new Date(item.dt * 1000);
-                const key = d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate();
+                const key =
+                  d.getUTCFullYear() +
+                  "-" +
+                  (d.getUTCMonth() + 1) +
+                  "-" +
+                  d.getUTCDate();
                 if (!groups[key]) groups[key] = [];
                 groups[key].push(item);
               });
@@ -62,19 +67,31 @@ async function fetchWeatherData(city) {
               // Build sorted dates excluding today
               const todayKey = (() => {
                 const n = new Date();
-                return n.getUTCFullYear() + '-' + (n.getUTCMonth() + 1) + '-' + n.getUTCDate();
+                return (
+                  n.getUTCFullYear() +
+                  "-" +
+                  (n.getUTCMonth() + 1) +
+                  "-" +
+                  n.getUTCDate()
+                );
               })();
 
-              const keys = Object.keys(groups).sort((a, b) => new Date(a) - new Date(b));
+              const keys = Object.keys(groups).sort(
+                (a, b) => new Date(a) - new Date(b)
+              );
               const nextDays = [];
               for (let k of keys) {
                 if (k === todayKey) continue;
                 const items = groups[k];
                 // find item closest to 12:00 UTC
                 let best = items[0];
-                let bestDiff = Math.abs(new Date(items[0].dt * 1000).getUTCHours() - 12);
+                let bestDiff = Math.abs(
+                  new Date(items[0].dt * 1000).getUTCHours() - 12
+                );
                 for (let it of items) {
-                  const diff = Math.abs(new Date(it.dt * 1000).getUTCHours() - 12);
+                  const diff = Math.abs(
+                    new Date(it.dt * 1000).getUTCHours() - 12
+                  );
                   if (diff < bestDiff) {
                     best = it;
                     bestDiff = diff;
@@ -91,10 +108,14 @@ async function fetchWeatherData(city) {
 
               if (nextDays.length > 0) data.forecast = nextDays;
             } else {
-              console.warn('Fallback forecast not available', altRes.status, altData);
+              console.warn(
+                "Fallback forecast not available",
+                altRes.status,
+                altData
+              );
             }
           } catch (altErr) {
-            console.warn('Fallback forecast fetch failed', altErr);
+            console.warn("Fallback forecast fetch failed", altErr);
           }
         }
       }

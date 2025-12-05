@@ -142,7 +142,8 @@ body {
   font-weight: bolder;
   font-size: clamp(18px, 4vw, 24px);
 }
-#forecast .icon div {}
+#forecast .icon div {
+}
 .forecast .icon div {
   width: clamp(40px, 8vw, 60px);
   height: clamp(40px, 8vw, 60px);
