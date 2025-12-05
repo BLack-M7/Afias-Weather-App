@@ -1,35 +1,19 @@
-// Browser-compatible weather API client
-async function fetchWeatherData(city) {
-  // Note: For production, you should use a backend proxy to hide your API key
-  // This demonstrates a direct call to OpenWeatherMap API
+// Vercel serverless function to proxy OpenWeatherMap API
+export default async function handler(req, res) {
+  const { city } = req.query;
+  if (!city) return res.status(400).json({ error: 'Missing city query parameter' });
 
-  const apiKey = "2bc70d527ee1fbcc925e2b568725e615"; // Replace with your actual OpenWeatherMap API key
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
 
-  const endpoint = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-    city
-  )}&appid=${apiKey}&units=metric`;
+  const endpoint = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
 
   try {
     const response = await fetch(endpoint);
     const data = await response.json();
-
-    if (!response.ok) {
-      console.error("API Response not OK:", response.status, data);
-      throw new Error(data.message || `Error: ${response.status}`);
-    }
-
-    return data;
+    return res.status(response.status).json(data);
   } catch (err) {
-    console.error("Weather API error details:", err.message, err);
-    throw err;
+    console.error('Proxy error:', err);
+    return res.status(502).json({ error: 'Unable to fetch weather data' });
   }
-}
-
-// Ensure the function is available on the window object when loaded in the browser
-try {
-  if (typeof window !== "undefined") {
-    window.fetchWeatherData = fetchWeatherData;
-  }
-} catch (e) {
-  // ignore (non-browser environments)
 }

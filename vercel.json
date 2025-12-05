@@ -1,0 +1,17 @@
+{
+  "buildCommand": "echo 'Static build'",
+  "outputDirectory": ".",
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "OPENWEATHER_API_KEY": "@openweather_api_key"
+  }
+}

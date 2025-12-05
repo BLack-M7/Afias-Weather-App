@@ -2,52 +2,45 @@
 
 This is a small weather application that fetches current weather and a 4-day forecast.
 
-Features added:
-
+**Features:**
 - Current weather (temperature, description, icon)
 - 4-day forecast (icons and daily temps)
 - Alert banner for imminent precipitation / low visibility / harmattan (dust/sand)
 - "Don't notify again for this city" option (stored in localStorage)
 - Per-day detail modal when clicking forecast days
-- Local Node proxy server to hide OpenWeather API key (`server.js`).
+- Secure backend proxy to hide OpenWeather API key
 
-Running the static app locally:
+## Local Development
 
-1. Start a simple static server in the project folder (for example):
+### Static (Python HTTP server):
 
 ```cmd
 python -m http.server 8000
 ```
+Open `http://localhost:8000`
 
-2. Open `http://localhost:8000` in your browser.
-
-Using the Node proxy (recommended for production and to hide API key):
-
-1. Install dependencies:
+### With Node proxy:
 
 ```cmd
 npm install
-```
-
-2. Set your OpenWeather API key in the environment:
-
-Windows (cmd):
-
-```cmd
 set OPENWEATHER_API_KEY=your_api_key_here
 npm start
 ```
+Open `http://localhost:3000`
 
-Linux/macOS:
+## Vercel Deployment
 
-```bash
-export OPENWEATHER_API_KEY=your_api_key_here
-npm start
-```
+1. Push to GitHub
+2. Go to [vercel.com](https://vercel.com) and link your repo
+3. Add environment variable in Vercel dashboard:
+   - Name: `OPENWEATHER_API_KEY`
+   - Value: Your OpenWeatherMap API key
+4. Deploy
 
-This will start `server.js` on port 3000 by default and expose `/api/weather` and `/api/forecast` endpoints for the frontend to use.
+The app will automatically use serverless functions for `/api/weather` and `/api/forecast` endpoints, keeping your API key secure.
 
-Notes:
+## Notes
 
-- The Node proxy is optional. The frontend can call OpenWeather directly if you prefer, but keeping the key in frontend is insecure.
-- Browser notifications require permission; the app asks when an alert appears.
+- Browser notifications require user permission
+- Frontend respects per-city "don't notify" preferences in localStorage
+- Vercel will handle all serverless routing automatically via `vercel.json`
