@@ -77,7 +77,7 @@ async function fetchWeatherData(city) {
           try {
             const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(
               city
-            )}&units=metric&appid=${apiKey}`;
+            )}&units=metric&appid=${directApiKey}`;
             const altRes = await fetch(forecastUrl);
             const altData = await altRes.json();
             if (altRes.ok && altData && Array.isArray(altData.list)) {
