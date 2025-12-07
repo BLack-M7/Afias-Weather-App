@@ -240,7 +240,10 @@ function checkForHazard(data) {
   // Check forecast array (next days)
   if (Array.isArray(data.forecast)) {
     data.forecast.forEach((f, idx) => {
-      inspectWeatherItem({ weather: f.weather }, `Day ${idx + 1}`);
+      const dayName = new Date(f.dt * 1000).toLocaleDateString(undefined, {
+        weekday: "long",
+      });
+      inspectWeatherItem({ weather: f.weather }, dayName);
       // If One Call daily has 'pop' (probability of precipitation), treat >40% as warning
       if (f.pop != null && f.pop >= 0.4) {
         const date = new Date(f.dt * 1000).toLocaleDateString(undefined, {
